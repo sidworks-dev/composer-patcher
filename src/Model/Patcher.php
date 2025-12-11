@@ -46,20 +46,25 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
         $this->applyPatches($event->isDevMode());
     }
 
+    public function noPatchesMessage(): void
+    {
+        $output = [
+            '',
+            self::SEPARATOR,
+            "\033[36mℹ {$this->description} {$this->version}\033[0m",
+            self::SEPARATOR,
+            " \033[90mPatches directory not found: {$this->patchesDir}\033[0m",
+            " \033[90mNo patches to apply\033[0m",
+            self::SEPARATOR,
+            ''
+        ];
+        echo implode(PHP_EOL, $output);
+    }
+
     protected function applyPatches(bool $devmode = false): void
     {
         if (empty($this->baseDir) || !is_dir($this->patchesDir)) {
-            $output = [
-                '',
-                self::SEPARATOR,
-                "\033[36mℹ {$this->description} {$this->version}\033[0m",
-                self::SEPARATOR,
-                " \033[90mPatches directory not found: {$this->patchesDir}\033[0m",
-                " \033[90mNo patches to apply\033[0m",
-                self::SEPARATOR,
-                ''
-            ];
-            echo implode(PHP_EOL, $output);
+            $this->noPatchesMessage();
             return;
         }
 
@@ -278,7 +283,7 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
     public function getCapabilities(): array
     {
         return [
-            'Composer\Plugin\Capability\CommandProvider' => 'Sidworks\ComposerPatcherPatcher\Model\CommandProvider',
+            'Composer\Plugin\Capability\CommandProvider' => 'Sidworks\ComposerPatcher\Model\CommandProvider',
         ];
     }
 

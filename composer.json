@@ -2,7 +2,7 @@
     "name": "sidworks/composer-patcher",
     "description": "Sidworks Composer patcher",
     "license": "MIT",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "type": "composer-plugin",
     "extra": {
         "class": "Sidworks\\ComposerPatcher\\Model\\Patcher"

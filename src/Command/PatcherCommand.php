@@ -35,16 +35,15 @@ class PatcherCommand extends BaseCommand
         $baseDir = dirname($composer->getConfig()->get('vendor-dir'));
         $patchesDir = $baseDir . DIRECTORY_SEPARATOR . 'patches';
 
-        if (!file_exists($patchesDir)) {
-            $io->writeError('<error>Patches directory not found: ' . $patchesDir . '</error>');
-            return 1;
-        }
-
         // Change to base directory
         chdir($baseDir);
 
         // Check if --create flag was used
         if ($input->getOption('create')) {
+            if (!file_exists($patchesDir)) {
+                $io->writeError('<error>Patches directory not found: ' . $patchesDir . '</error>');
+                return 1;
+            }
             return $this->createPatch($io, $baseDir, $patchesDir);
         }
 
@@ -59,6 +58,11 @@ class PatcherCommand extends BaseCommand
 
         // Activate the patcher
         $patcher->activate($composer, $io);
+
+        if (!file_exists($patchesDir)) {
+            $patcher->noPatchesMessage();
+            return 0;
+        }
 
         // Determine if we're in dev mode (default to true for manual runs)
         $devMode = true;
