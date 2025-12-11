@@ -1,0 +1,18 @@
+{
+    "name": "sidworks/composer-patcher",
+    "description": "Sidworks Composer patcher",
+    "license": "MIT",
+    "version": "1.0.0",
+    "type": "composer-plugin",
+    "extra": {
+        "class": "Sidworks\\ComposerPatcher\\Model\\Patcher"
+    },
+    "require": {
+        "composer-plugin-api": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sidworks\\ComposerPatcher\\": "src/"
+        }
+    }
+}
