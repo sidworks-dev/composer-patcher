@@ -52,7 +52,22 @@ This interactive command will:
 1. Ask for the file path (e.g., `vendor/acme/utils/src/Calculator.php`)
 2. Extract the original file from the package
 3. Generate a diff between original and modified versions
-4. Save the patch with your chosen name
+4. Ask if you want to save in the package folder (e.g., `patches/acme/utils/`)
+5. Save the patch with your chosen filename
+
+Example session:
+```
+Enter the file path (relative to project root):
+> vendor/acme/utils/src/Calculator.php
+
+Save in patches/acme/utils/? [Y/n] y
+
+Enter patch filename [Calculator.php.patch]:
+>
+
+✓ Patch created successfully!
+Location: patches/acme/utils/Calculator.php.patch
+```
 
 ### Manually Creating Patches
 

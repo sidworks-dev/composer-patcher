@@ -41,8 +41,18 @@ class PatcherCommand extends BaseCommand
         // Check if --create flag was used
         if ($input->getOption('create')) {
             if (!file_exists($patchesDir)) {
-                $io->writeError('<error>Patches directory not found: ' . $patchesDir . '</error>');
-                return 1;
+                $io->write('<comment>Patches directory not found: ' . $patchesDir . '</comment>');
+                $io->write('');
+                $create = $io->askConfirmation('<question>Create patches directory? [Y/n]</question> ', true);
+                if (!$create) {
+                    return 1;
+                }
+                if (!mkdir($patchesDir, 0755, true)) {
+                    $io->writeError('<error>Failed to create patches directory.</error>');
+                    return 1;
+                }
+                $io->write('<info>Created patches directory.</info>');
+                $io->write('');
             }
             return $this->createPatch($io, $baseDir, $patchesDir);
         }
@@ -87,16 +97,16 @@ class PatcherCommand extends BaseCommand
         $io->write('');
 
         // Ask for the file path
-        $io->write('<question>Enter the file path (relative to project root, e.g., vendor/acme/utils/src/Calculator.php):</question>');
-        $filePath = trim($io->ask('> '));
-
-        if (empty($filePath)) {
-            $io->writeError('<error>File path is required.</error>');
-            return 1;
+        $filePath = '';
+        while ($filePath === '') {
+            $io->write('<question>Enter the file path (relative to project root, e.g., vendor/acme/utils/src/Calculator.php):</question>');
+            $input = $io->ask('> ');
+            $filePath = trim((string) $input);
+            if ($filePath === '') {
+                $io->writeError('<error>File path is required.</error>');
+                $io->write('');
+            }
         }
-
-        // Normalize path
-        $filePath = trim($filePath);
         $fullPath = $baseDir . DIRECTORY_SEPARATOR . $filePath;
 
         if (!file_exists($fullPath)) {
@@ -119,6 +129,8 @@ class PatcherCommand extends BaseCommand
         $io->write('<comment>Extracting original file from package...</comment>');
 
         // Extract package name and relative file path
+        $package = '';
+        $relativeFilePath = '';
         if (preg_match('#vendor/([^/]+/[^/]+)/(.+)$#', $filePath, $matches)) {
             $package = $matches[1];
             $relativeFilePath = $matches[2];
@@ -207,15 +219,43 @@ class PatcherCommand extends BaseCommand
 
         // Ask for patch name
         $io->write('');
-        $io->write('<question>Enter patch name (e.g., fix-calculation or acme/utils-fix):</question>');
-        $patchName = trim($io->ask('> '));
+        $patchName = '';
 
-        if (empty($patchName)) {
-            $io->writeError('<error>Patch name is required.</error>');
-            return 1;
+        // If we have a package, offer to use vendor/name structure
+        if (!empty($package)) {
+            $usePackageFolder = $io->askConfirmation(
+                '<question>Save in patches/' . $package . '/? [Y/n]</question> ',
+                true
+            );
+
+            if ($usePackageFolder) {
+                // Ask for just the filename
+                $suggestedFilename = basename($relativeFilePath) . '.patch';
+                while ($patchName === '') {
+                    $io->write('<question>Enter patch filename [' . $suggestedFilename . ']:</question>');
+                    $input = $io->ask('> ');
+                    $patchName = trim((string) $input);
+                    if ($patchName === '') {
+                        $patchName = $suggestedFilename;
+                    }
+                }
+                // Prepend package folder
+                $patchName = $package . '/' . $patchName;
+            }
         }
 
-        $patchName = trim($patchName);
+        // Custom naming (no package or user chose not to use package folder)
+        if ($patchName === '') {
+            while ($patchName === '') {
+                $io->write('<question>Enter patch name (e.g., my-fix or vendor/package/fix):</question>');
+                $input = $io->ask('> ');
+                $patchName = trim((string) $input);
+                if ($patchName === '') {
+                    $io->writeError('<error>Patch name is required.</error>');
+                    $io->write('');
+                }
+            }
+        }
 
         // Ensure .patch extension
         if (!str_ends_with($patchName, '.patch')) {
