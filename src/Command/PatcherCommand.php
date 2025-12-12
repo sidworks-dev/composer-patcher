@@ -87,7 +87,7 @@ class PatcherCommand extends BaseCommand
         $io->write('');
 
         // Ask for the file path
-        $io->write('<question>Enter the file path (relative to project root, e.g., vendor/shopware/core/Checkout/Cart/Price/Struct/CartPrice.php):</question>');
+        $io->write('<question>Enter the file path (relative to project root, e.g., vendor/acme/utils/src/Calculator.php):</question>');
         $filePath = trim($io->ask('> '));
 
         if (empty($filePath)) {
@@ -207,7 +207,7 @@ class PatcherCommand extends BaseCommand
 
         // Ask for patch name
         $io->write('');
-        $io->write('<question>Enter patch name (e.g., fix-price-calculation or shopware/cart-price-fix):</question>');
+        $io->write('<question>Enter patch name (e.g., fix-calculation or acme/utils-fix):</question>');
         $patchName = trim($io->ask('> '));
 
         if (empty($patchName)) {
