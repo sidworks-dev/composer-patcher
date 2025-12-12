@@ -10,18 +10,18 @@ use Composer\Plugin\Capable;
 use Composer\EventDispatcher\EventSubscriberInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
+use Sidworks\ComposerPatcher\Helper\Output;
 
 class Patcher implements PluginInterface, EventSubscriberInterface, Capable
 {
     private const PATCH_OPTIONS = ' --whitespace=nowarn --ignore-space-change --ignore-whitespace ';
-    private const SEPARATOR = '────────────────────────────────────────────────────────────';
 
     private string $patchesDir = '';
     private string $baseDir = '';
     private array $errorOutput = [];
     private array $successOutput = [];
     private string $version = 'unknown';
-    private string $description = 'Sidworks Composer Patcher';
+    private string $name = 'Sidworks Composer Patcher';
 
     // Cache for composer.json data
     private static ?array $composerData = null;
@@ -46,33 +46,29 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
         $this->applyPatches($event->isDevMode());
     }
 
+    private function getTitle(): string
+    {
+        return "{$this->name} {$this->version}";
+    }
+
     public function noPatchesMessage(): void
     {
-        $output = [
-            '',
-            self::SEPARATOR,
-            "\033[36mℹ {$this->description} {$this->version}\033[0m",
-            self::SEPARATOR,
-            " \033[90mPatches directory not found: {$this->patchesDir}\033[0m",
-            " \033[90mNo patches to apply\033[0m",
-            self::SEPARATOR,
-            ''
-        ];
-        echo implode(PHP_EOL, $output);
+        (new Output())
+            ->header($this->getTitle())
+            ->info("Patches directory not found: {$this->patchesDir}")
+            ->separator()
+            ->blank()
+            ->render();
     }
 
     private function noPatchesFoundMessage(): void
     {
-        $output = [
-            '',
-            self::SEPARATOR,
-            "\033[36mℹ {$this->description} {$this->version}\033[0m",
-            self::SEPARATOR,
-            " \033[90mNo patch files found in: {$this->patchesDir}\033[0m",
-            self::SEPARATOR,
-            ''
-        ];
-        echo implode(PHP_EOL, $output);
+        (new Output())
+            ->header($this->getTitle())
+            ->info("No patch files found in: {$this->patchesDir}")
+            ->separator()
+            ->blank()
+            ->render();
     }
 
     protected function applyPatches(bool $devmode = false): void
@@ -197,7 +193,7 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
         }
 
         $this->version = self::$composerData['version'] ?? 'unknown';
-        $this->description = self::$composerData['extra']['display-name'] ?? 'Sidworks Composer Patcher';
+        $this->name = self::$composerData['extra']['display-name'] ?? 'Sidworks Composer Patcher';
     }
 
     protected function message(): void
@@ -216,84 +212,64 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
         $hasErrors = !empty($this->errorOutput);
         $totalCount = $successCount + $errorCount;
 
-        // Build output buffer to reduce echo calls
-        $output = [
-            '',
-            self::SEPARATOR,
-            $hasErrors
-                ? "\033[33m ⚠ {$this->description} {$this->version}\033[0m"
-                : "\033[32m ✓ {$this->description} {$this->version}\033[0m",
-            self::SEPARATOR,
-            " Total: {$totalCount} patches | \033[32mSuccess: {$successCount}\033[0m | \033[31mFailed: {$errorCount}\033[0m",
-            self::SEPARATOR
-        ];
+        $output = new Output();
+        $output->header($this->getTitle(), $hasErrors ? 'warning' : 'success')
+            ->stats($totalCount, $successCount, $errorCount);
 
+        // Successful patches
         if (!empty($this->successOutput)) {
-            $output[] = '';
-            $output[] = "\033[1;32mSuccessfully Applied:\033[0m";
-
-            // Sort folders alphabetically
+            $output->sectionTitle('Applied', 'success');
             ksort($this->successOutput);
 
             foreach ($this->successOutput as $folder => $patches) {
-                $output[] = " \033[1;36m{$folder}\033[0m";
+                $output->groupHeader($folder);
                 foreach ($patches as $patch) {
-                    // Extract just the filename after the folder
                     $filename = str_contains($patch, '/')
                         ? substr($patch, strpos($patch, '/') + 1)
                         : $patch;
-                    $output[] = "  \033[32m✓\033[0m {$filename}";
+                    $output->listItem($filename, 'success');
                 }
             }
         }
 
+        // Failed patches
         if ($hasErrors) {
-            $output[] = '';
-            $output[] = "\033[1;31mFailed Patches:\033[0m";
-
-            // Sort folders alphabetically
+            $output->sectionTitle('Failed', 'error');
             ksort($this->errorOutput);
 
             foreach ($this->errorOutput as $folder => $patches) {
-                $output[] = " \033[1;36m{$folder}\033[0m";
+                $output->groupHeader($folder);
 
                 foreach ($patches as $patchData) {
-                    // Extract just the filename after the folder
                     $filename = str_contains($patchData['patch'], '/')
                         ? substr($patchData['patch'], strpos($patchData['patch'], '/') + 1)
                         : $patchData['patch'];
 
-                    $output[] = "  \033[31mX\033[0m {$filename}";
+                    $output->listItem($filename, 'error');
 
-                    // Process error lines efficiently
                     $errorLines = explode("\n", trim($patchData['error']));
                     foreach ($errorLines as $errorLine) {
                         $errorLine = trim($errorLine);
                         if ($errorLine !== '') {
-                            $output[] = "    \033[33m{$errorLine}\033[0m";
+                            $output->errorDetail($errorLine);
                         }
                     }
                 }
             }
 
-            $output[] = '';
-            $output[] = self::SEPARATOR;
-            $output[] = "\033[31m✗ Patch application failed - please review errors above\033[0m";
-            $output[] = self::SEPARATOR;
-            $output[] = '';
-
-            // Output everything at once, then exit
-            echo implode(PHP_EOL, $output);
-            exit(1);
+            $output->blank()
+                ->separator()
+                ->error('Patch application failed - please review errors above')
+                ->separator()
+                ->blank()
+                ->renderAndExit(1);
         }
 
-        $output[] = '';
-        $output[] = "\033[32m✓ All patches applied successfully!\033[0m";
-        $output[] = self::SEPARATOR;
-        $output[] = '';
-
-        // Single output call
-        echo implode(PHP_EOL, $output);
+        $output->blank()
+            ->success('All patches applied successfully!')
+            ->separator()
+            ->blank()
+            ->render();
     }
 
     public function getCapabilities(): array

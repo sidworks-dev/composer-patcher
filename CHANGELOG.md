@@ -7,9 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.6] - 12-12-2025
 
+### Added
+
+- New `Output` helper class for reusable, consistent CLI formatting
+- New `Input` helper class for validated user input (Y/n confirmations, text prompts)
+
 ### Changed
 
 - Cleaner output when no patches found (skips patch application entirely)
+- Improved output formatting with better visual hierarchy
+- Refactored message rendering for consistency
 
 ## [1.0.5] - 12-12-2025
 
