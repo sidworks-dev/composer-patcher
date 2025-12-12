@@ -1,14 +1,30 @@
 {
     "name": "sidworks/composer-patcher",
-    "description": "Sidworks Composer patcher",
+    "description": "Composer plugin to automatically apply patches to vendor packages without forking",
     "license": "MIT",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "type": "composer-plugin",
+    "keywords": [
+        "composer",
+        "plugin",
+        "patch",
+        "patches",
+        "vendor",
+        "git",
+        "patching",
+        "vendor-patches"
+    ],
+    "homepage": "https://github.com/sidworks-dev/composer-patcher",
+    "support": {
+        "issues": "https://github.com/sidworks-dev/composer-patcher/issues",
+        "source": "https://github.com/sidworks-dev/composer-patcher"
+    },
     "extra": {
         "class": "Sidworks\\ComposerPatcher\\Model\\Patcher"
     },
     "require": {
-        "composer-plugin-api": "*"
+        "php": "^8.0",
+        "composer-plugin-api": "^2.0"
     },
     "autoload": {
         "psr-4": {

@@ -1,5 +1,9 @@
 # Sidworks Composer Patcher
 
+[![Latest Version](https://img.shields.io/packagist/v/sidworks/composer-patcher.svg)](https://packagist.org/packages/sidworks/composer-patcher)
+[![PHP Version](https://img.shields.io/packagist/php-v/sidworks/composer-patcher.svg)](https://packagist.org/packages/sidworks/composer-patcher)
+[![License](https://img.shields.io/packagist/l/sidworks/composer-patcher.svg)](LICENSE)
+
 A Composer plugin that automatically applies git-format patches to your project. Useful for patching vendor packages without forking.
 
 ## Features
