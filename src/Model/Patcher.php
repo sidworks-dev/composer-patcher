@@ -181,7 +181,7 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
         }
 
         $this->version = self::$composerData['version'] ?? 'unknown';
-        $this->description = self::$composerData['description'] ?? 'Sidworks Composer Patcher';
+        $this->description = self::$composerData['extra']['display-name'] ?? 'Sidworks Composer Patcher';
     }
 
     protected function message(): void
