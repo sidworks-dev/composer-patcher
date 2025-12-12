@@ -61,6 +61,20 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
         echo implode(PHP_EOL, $output);
     }
 
+    private function noPatchesFoundMessage(): void
+    {
+        $output = [
+            '',
+            self::SEPARATOR,
+            "\033[36mℹ {$this->description} {$this->version}\033[0m",
+            self::SEPARATOR,
+            " \033[90mNo patch files found in: {$this->patchesDir}\033[0m",
+            self::SEPARATOR,
+            ''
+        ];
+        echo implode(PHP_EOL, $output);
+    }
+
     protected function applyPatches(bool $devmode = false): void
     {
         if (empty($this->baseDir) || !is_dir($this->patchesDir)) {
@@ -73,10 +87,12 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
         // Collect all patches at once instead of multiple calls
         $patches = $this->findAllPatches($devmode);
 
-        if (!empty($patches)) {
-            $this->applyPatchList($patches);
+        if (empty($patches)) {
+            $this->noPatchesFoundMessage();
+            return;
         }
 
+        $this->applyPatchList($patches);
         $this->message();
     }
 
