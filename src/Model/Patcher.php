@@ -218,11 +218,16 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
 
         // Successful patches
         if (!empty($this->successOutput)) {
-            $output->sectionTitle('Applied', 'success');
             ksort($this->successOutput);
+            $isFirst = true;
 
             foreach ($this->successOutput as $folder => $patches) {
-                $output->groupHeader($folder);
+                if (!$isFirst) {
+                    $output->groupSeparator();
+                }
+                $isFirst = false;
+
+                $output->groupHeader($folder, count($patches));
                 foreach ($patches as $patch) {
                     $filename = str_contains($patch, '/')
                         ? substr($patch, strpos($patch, '/') + 1)
@@ -238,7 +243,7 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
             ksort($this->errorOutput);
 
             foreach ($this->errorOutput as $folder => $patches) {
-                $output->groupHeader($folder);
+                $output->groupHeader($folder, count($patches));
 
                 foreach ($patches as $patchData) {
                     $filename = str_contains($patchData['patch'], '/')
@@ -260,14 +265,13 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
             $output->blank()
                 ->separator()
                 ->error('Patch application failed - please review errors above')
-                ->separator()
                 ->blank()
                 ->renderAndExit(1);
         }
 
         $output->blank()
-            ->success('All patches applied successfully!')
             ->separator()
+            ->success('All patches applied successfully!')
             ->blank()
             ->render();
     }
