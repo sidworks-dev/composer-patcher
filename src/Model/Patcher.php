@@ -10,12 +10,11 @@ use Composer\Plugin\Capable;
 use Composer\EventDispatcher\EventSubscriberInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
-use Composer\Util\ProcessExecutor;
 use Sidworks\ComposerPatcher\Helper\Output;
 
 class Patcher implements PluginInterface, EventSubscriberInterface, Capable
 {
-    private const array PATCH_OPTIONS = ['--whitespace=nowarn', '--ignore-space-change', '--ignore-whitespace'];
+    private const PATCH_OPTIONS = ' --whitespace=nowarn --ignore-space-change --ignore-whitespace ';
 
     private string $patchesDir = '';
     private string $baseDir = '';
@@ -40,8 +39,6 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
         $this->baseDir = dirname($composer->getConfig()->get('vendor-dir'));
         $this->patchesDir = $this->baseDir . DIRECTORY_SEPARATOR . 'patches';
         $this->loadVersion();
-        $this->version = $composer->getRepositoryManager()->getLocalRepository()
-            ->findPackage('sidworks/composer-patcher', '*')?->getPrettyVersion() ?? $this->version;
     }
 
     public function onPostInstallCommand(Event $event): void
@@ -141,11 +138,9 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
                 : basename($patch);
         }
 
-        $executor = new ProcessExecutor();
-
-        // Revert patches in reverse order (suppress output).
+        // Revert patches in reverse order (suppress output)
         foreach (array_reverse($patches) as $patch) {
-            $executor->execute(['git', 'apply', '--reverse', ...self::PATCH_OPTIONS, $patch], $ignored, $this->baseDir);
+            shell_exec('git apply --reverse' . self::PATCH_OPTIONS . escapeshellarg($patch) . ' 2>&1 > /dev/null');
         }
 
         // Apply patches and collect results grouped by folder
@@ -153,8 +148,7 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
         $errorsByFolder = [];
 
         foreach ($patches as $patch) {
-            $exitCode = $executor->execute(['git', 'apply', ...self::PATCH_OPTIONS, $patch], $result, $this->baseDir);
-            $result .= $executor->getErrorOutput();
+            $result = shell_exec('git apply' . self::PATCH_OPTIONS . escapeshellarg($patch) . ' 2>&1');
             $relativePath = $relativePaths[$patch];
 
             // Extract folder name (everything before first /)
@@ -163,7 +157,7 @@ class Patcher implements PluginInterface, EventSubscriberInterface, Capable
                 $folder = substr($relativePath, 0, strpos($relativePath, '/'));
             }
 
-            if ($exitCode !== 0) {
+            if ($result && str_contains($result, 'error')) {
                 if (!isset($errorsByFolder[$folder])) {
                     $errorsByFolder[$folder] = [];
                 }
